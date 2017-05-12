@@ -122,13 +122,21 @@ func (b BOSHHandler) info(w http.ResponseWriter, req *http.Request) {
 func (b BOSHHandler) releases(w http.ResponseWriter, req *http.Request) {
 	auth := getAuthInfo(b.CookieSession, w, req)
 	releases, err := b.BOSHClient.GetReleases(auth)
-	if err != nil {
-		log.Errorf("releases - get_releases %s", err.Error())
-		b.respond(w, http.StatusInternalServerError, ErrorResponse{
-			Description: err.Error(),
-		})
-		return
-	}
+        if err != nil {
+              username := req.PostFormValue("username")
+              password := req.PostFormValue("password")
+              tokenRefresh, err := b.BOSHClient.GetPasswordToken(username, password)
+              auth.token = tokenRefresh
+              releases, err := b.BOSHClient.GetReleases(auth)
+	      if err != nil {
+		      log.Errorf("releases - get_releases %s", tokenRefresh)
+		      b.respond(w, http.StatusInternalServerError, ErrorResponse{
+			      Description: err.Error(),
+		      })
+		      return
+	      }
+              b.respond(w, http.StatusOK, releases)
+        }
 	b.respond(w, http.StatusOK, releases)
 }
 
@@ -136,7 +144,7 @@ func (b BOSHHandler) stemcells(w http.ResponseWriter, req *http.Request) {
 	auth := getAuthInfo(b.CookieSession, w, req)
 	stemcells, err := b.BOSHClient.GetStemcells(auth)
 	if err != nil {
-		log.Errorf("stemcells - get_stemcells %s", err.Error())
+		log.Errorf("stemcells - get_stemcells_test %s", err.Error())
 		b.respond(w, http.StatusInternalServerError, ErrorResponse{
 			Description: err.Error(),
 		})
